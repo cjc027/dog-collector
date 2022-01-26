@@ -1,10 +1,10 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
-from django.urls import reverse
 # from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView
 
-from .models import Dog, Feeding
+from .models import Dog, Feeding, Toy
 from .forms import FeedingForm
 
 # Create your views here.
@@ -20,8 +20,13 @@ def about(request):
 
 def dogs_detail(request, dog_id):
     dog = Dog.objects.get(id=dog_id)
+    toys_dog_doesnt_have = Toy.objects.exclude(id__in= dog.toys.all().values_list('id'))
     feeding_form = FeedingForm()
-    return render(request, 'dogs/detail.html', {'dog': dog, 'feeding_form': feeding_form})
+    return render(request, 'dogs/detail.html', {
+        'dog': dog, 
+        'feeding_form': feeding_form,
+        'toys': toys_dog_doesnt_have
+        })
 
 def add_feeding(request, dog_id):
     form = FeedingForm(request.POST)
@@ -30,6 +35,11 @@ def add_feeding(request, dog_id):
         new_feeding.dog_id = dog_id
         new_feeding.save()
     return redirect('detail', dog_id=dog_id)
+
+def assoc_toy(request, dog_id, toy_id):
+	dog = Dog.objects.get(id=dog_id)
+	dog.toys.add(toy_id)
+	return redirect('detail', dog_id=dog_id)
 
 class DogCreate(CreateView):
     model = Dog
@@ -42,3 +52,22 @@ class DogUpdate(UpdateView):
 class DogDelete(DeleteView):
     model = Dog
     success_url = '/dogs/'
+
+
+class ToyList(ListView):
+  model = Toy
+
+class ToyDetail(DetailView):
+  model = Toy
+
+class ToyCreate(CreateView):
+  model = Toy
+  fields = '__all__'
+
+class ToyUpdate(UpdateView):
+  model = Toy
+  fields = ['name', 'color']
+
+class ToyDelete(DeleteView):
+  model = Toy
+  success_url = '/toys/'
